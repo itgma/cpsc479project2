@@ -20,6 +20,7 @@ double euclidean_distance(double x1, double y1, double x2, double y2) {
 	return dist;
 }
 
+
 int main(int argc, char **argv) {
 	int rank, size;
 	MPI_Init(&argc, &argv);
