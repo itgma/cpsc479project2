@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 	// New centroids have been calculated
 	// Assign labels - Tell each site which centroid they belong to
 	// Done locally in each process
-	double * site = sites;
+	site = sites;
 	for (int i = 0; i < elements_per; i++) {
 		cluster_assignment[i] = assign_site(site, centroids, cluster_num, dimension_num);
 	}
