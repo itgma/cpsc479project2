@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 			add_site(site, &sums[cluster * dimension_num], dimension_num)
 		}
 
-		MPI_Reduce(sums, grand_sums, cluster_num * dimension_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(sums, all_sums, cluster_num * dimension_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(site_count, all_site_count, cluster_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
 		// Compute the new centroids by dividing sums 
