@@ -1,7 +1,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <time.h>
-#include <cstdlib.h>
+#include <stdlib.h>
 
 // Heavily referencing https://github.com/rexdwyer/MPI-K-means-clustering/blob/master/kmeans.c
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 	int rank, size;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size;)
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	if (argc != 4 && rank == 0) {
 		printf("Usage is as follows: \nmpirun -n 100 ./kmeans elements_per_cluster cluster_num dimension_num");
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 
 	// Measures the distance the new centroids are from the old centroids
 	double norm = 1.0;
+	double * site = sites;
 	while (norm > THRESHOLD) {
 		// Broadcast all centroids to processes to compare and adjust
 
@@ -95,16 +96,16 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < cluster_num; i++) {
 			site_count[i] = 0;
 		}
-		for (int i = 0; i < cluster_num * dimension_num) {
+		for (int i = 0; i < cluster_num * dimension_num;i++) {
 			sums[i] = 0;
 		}
 
-		double * site = sites;
+		
 		// Increment site by dimension to get the next site 
-		for (int i = 0; i < elements_per; i++, site += d) {
+		for (int i = 0; i < elements_per; i++, site += dimension_num) {
 			int cluster = assign_site(site, centroids, cluster_num, dimension_num);
 			site_count[cluster] += 1;
-			add_site(site, &sums[cluster * dimension_num], dimension_num)
+			add_site(site, &sums[cluster * dimension_num], dimension_num);
 		}
 
 		MPI_Reduce(sums, all_sums, cluster_num * dimension_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -167,7 +168,7 @@ int assign_site(double * site, double * centroids, int cluster_num, int dimensio
 	// Increment by dimension to get the next centroid
 	double * current_centroid = centroids + dimension;
 
-	for (int i = 1; i < cluster_num, i++, current_centroid += dimension) {
+	for (int i = 1; i < cluster_num; i++, current_centroid += dimension) {
 		double distance = euclidean_distance(site, current_centroid, dimension);
 		if (distance < low_distance) {
 			assigned_cluster = i;
