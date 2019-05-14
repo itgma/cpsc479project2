@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 
+using namespace std;
 // Heavily referencing https://github.com/rexdwyer/MPI-K-means-clustering/blob/master/kmeans.c
 
 // Stop checking when the centroids move less than the threshold
@@ -23,6 +24,7 @@ void add_site(double *, double *, int);
 // All values are from 0-1
 double * rand_sites(int);
 
+void print_centroids(double * centroids, const int cluster_num, const int dimension_num);
 int main(int argc, char **argv) {
 	int rank, size;
 	MPI_Init(&argc, &argv);
@@ -75,9 +77,10 @@ int main(int argc, char **argv) {
 		// initial seeding for clusters is the first every other site (k times)
 		// hopefully a little more random than just the first k sites
 		for (int i = 0; i < cluster_num * dimension_num; i++) {
-			centroids[i] = all_sites[i * 2];
+			centroids[i] = all_sites[i];
 		}
 		// TODO: Print centroids? If we want to
+		print_centroids(centroids, cluster_num, dimension_num);
 		all_site_count = new int[cluster_num];
 		all_sums = new double[cluster_num * dimension_num];
 		all_assignments = new int[elements_per * size];
@@ -145,10 +148,22 @@ int main(int argc, char **argv) {
 
 	// Gather all labels into the master process - p0
 	MPI_Gather(cluster_assignment, elements_per, MPI_INT, all_assignments, elements_per, MPI_INT, 0, MPI_COMM_WORLD);
+	 // Root can print out all sites and labels.
+  	if ((rank == 0) && 1) {
+	
+   	double* site = all_sites; 
+    for (int i = 0;
+	 i < size * elements_per;
+	 i++, site += dimension_num) {
+      for (int j = 0; j < dimension_num; j++) cout << "site: " << site[j];
+      cout <<"labels: " <<all_assignments[i] << "\n";
+    }
+}
 	// TODO: Print out new clusters
 	// TODO: Print out all sites and labels
 	MPI_Finalize();
 	return 0;
+
 }
 
 double euclidean_distance(double * site1, double * site2, int dimension) {
@@ -194,4 +209,15 @@ double * rand_sites(int total_elements) {
 		all_elements[i] = rand_num * range;
 	}
 	return all_elements;
+}
+
+void print_centroids(double * centroids, const int cluster_num, const int dimension_num) {
+  double *p = centroids;
+  cout << "Centroids:\n";
+  for (int i = 0; i<cluster_num; i++) {
+    for (int j = 0; j<dimension_num; j++, p++) {
+      cout << *p;
+    }
+    cout << "\n";
+  }
 }
