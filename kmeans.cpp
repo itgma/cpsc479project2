@@ -134,6 +134,7 @@ int main(int argc, char **argv) {
 			for (int i = 0; i < cluster_num * dimension_num; i++) {
 				centroids[i] = all_sums[i];
 			}
+			print_centroids(centroids,cluster_num,dimension_num);		
 		}
 		// Broadcast the new locations of centroids
 		MPI_Bcast(&norm, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
