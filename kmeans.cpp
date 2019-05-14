@@ -12,12 +12,12 @@ using namespace std;
 // Distance between two individual sites
 double euclidean_distance(double *, double *, int);
 
-// Assigns a site to its proper cluster 
+// Assigns a site to its proper cluster
 // Calculate the distance to each cluster from the site
 // Takes the cluster with the lowest distance
 int assign_site(double *, double *, int, int);
 
-// Adds a site to a vector of all sites 
+// Adds a site to a vector of all sites
 void add_site(double *, double *, int);
 
 // Creates random sites
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	int cluster_num = atoi(argv[2]);
 	int dimension_num = atoi(argv[3]);
 
-	// Seed the random generator 
+	// Seed the random generator
 	srand(time(NULL));
 
 	// Declaring buffers for both individual process and the process handler - process 0
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	// Matrixes are declared as a single array b/c the dimensionality is variable
 
 
-	// All sites possible 
+	// All sites possible
 	// Matrix but accessed and parsed like an array
 	double * all_sites = NULL;
 	double * sites = sites = new double[elements_per * dimension_num];
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 		all_assignments = new int[elements_per * size];
 	}
 
-	// Scatter all_sites to each process's sites 
+	// Scatter all_sites to each process's sites
 	MPI_Scatter(all_sites, elements_per * dimension_num, MPI_DOUBLE, sites, elements_per * dimension_num, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	// Measures the distance the new centroids are from the old centroids
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 	double * site = sites;
 	while (norm > THRESHOLD) {
 		// Broadcast all centroids to processes to compare and adjust
-
+    MPI_Bcast(centroids, cluster_num * dimension_num, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		// Reset all sum and site counts to 0
 		for (int i = 0; i < cluster_num; i++) {
 			site_count[i] = 0;
@@ -103,8 +103,8 @@ int main(int argc, char **argv) {
 			sums[i] = 0;
 		}
 
-		
-		// Increment site by dimension to get the next site 
+
+		// Increment site by dimension to get the next site
 		for (int i = 0; i < elements_per; i++, site += dimension_num) {
 			int cluster = assign_site(site, centroids, cluster_num, dimension_num);
 			site_count[cluster] += 1;
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 		MPI_Reduce(sums, all_sums, cluster_num * dimension_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(site_count, all_site_count, cluster_num, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-		// Compute the new centroids by dividing sums 
+		// Compute the new centroids by dividing sums
 		// Compute how much the centroids have moved
 		if (rank == 0) {
 			for (int i = 0; i < cluster_num; i++) {
@@ -135,32 +135,28 @@ int main(int argc, char **argv) {
 				centroids[i] = all_sums[i];
 			}
 		}
-		// Broadcast the new locations of centroids 
+		// Broadcast the new locations of centroids
 		MPI_Bcast(&norm, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	}
 	// New centroids have been calculated
 	// Assign labels - Tell each site which centroid they belong to
 	// Done locally in each process
 	site = sites;
-	for (int i = 0; i < elements_per; i++) {
+	for (int i = 0; i < elements_per; i++, site += dimension_num) {
 		cluster_assignment[i] = assign_site(site, centroids, cluster_num, dimension_num);
 	}
 
 	// Gather all labels into the master process - p0
 	MPI_Gather(cluster_assignment, elements_per, MPI_INT, all_assignments, elements_per, MPI_INT, 0, MPI_COMM_WORLD);
 	 // Root can print out all sites and labels.
-  	if ((rank == 0) && 1) {
-	
-   	double* site = all_sites; 
-    for (int i = 0;
-	 i < size * elements_per;
-	 i++, site += dimension_num) {
-      for (int j = 0; j < dimension_num; j++) cout << "site: " << site[j];
-      cout <<"labels: " <<all_assignments[i] << "\n";
+  	if (rank == 0) {
+     	double * site = all_sites;
+      for (int i = 0; i < size * elements_per; i++, site += dimension_num) {
+          cout << "site: ";
+          for (int j = 0; j < dimension_num; j++) cout << site[j] << ", ";
+          cout <<"\n\tlabel: " << all_assignments[i] << "\n";
+      }
     }
-}
-	// TODO: Print out new clusters
-	// TODO: Print out all sites and labels
 	MPI_Finalize();
 	return 0;
 
@@ -204,7 +200,7 @@ double * rand_sites(int total_elements) {
 	double range = 5;
 	for (int i = 0; i < total_elements; i++) {
 		// rand_num is 0-1
-		double rand_num = (double)rand() / (double) RAND_MAX; 
+		double rand_num = (double)rand() / (double) RAND_MAX;
 		// all elements are now between 0-5
 		all_elements[i] = rand_num * range;
 	}
@@ -214,9 +210,9 @@ double * rand_sites(int total_elements) {
 void print_centroids(double * centroids, const int cluster_num, const int dimension_num) {
   double *p = centroids;
   cout << "Centroids:\n";
-  for (int i = 0; i<cluster_num; i++) {
-    for (int j = 0; j<dimension_num; j++, p++) {
-      cout << *p;
+  for (int i = 0; i< cluster_num; i++) {
+    for (int j = 0; j< dimension_num; j++, p++) {
+      cout << *p << ", ";
     }
     cout << "\n";
   }
